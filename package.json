@@ -1,0 +1,27 @@
+{
+  "name": "react-app",
+  "description": "React App",
+  "private": true,
+  "author": "App Author",
+  "version": "0.0.1",
+  "repository": "",
+  "scripts": {
+    "start": "brunch watch --server",
+    "build": "brunch build --production"
+  },
+  "dependencies": {
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  },
+  "devDependencies": {
+    "auto-reload-brunch": "^2",
+    "autoprefixer": "^7.2.5",
+    "babel-brunch": "github:babel/babel-brunch",
+    "babel-preset-react": "^6.24.1",
+    "brunch": "^2",
+    "clean-css-brunch": "^2",
+    "postcss-brunch": "^2.1.0",
+    "sass-brunch": "^2.10.4",
+    "uglify-js-brunch": "^2"
+  }
+}
