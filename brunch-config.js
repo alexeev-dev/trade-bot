@@ -16,5 +16,8 @@ exports.plugins = {
     processors: [
       require('autoprefixer')(['last 8 versions', 'Safari > 10'])
     ]
+  },
+  browserSync: {
+    proxy: 'localhost:8080'
   }
 };

@@ -23,8 +23,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    console.log('!!!')
-    tradingBot.testAPI().then(result => {
+    tradingBot.status().then(result => {
       console.log(result)
     }).catch(error => {
       console.log(error)

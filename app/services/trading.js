@@ -1,54 +1,111 @@
-import jsSHA from 'jssha'
-
-const authInfo = {
-  key: '92CCCF06A999982E166B6F7277C95F3B',
-  secret: 'da67943fbfdd4fa9b43f3e8f8c0d4c76'
-}
-
 class TradingBot {
-  constructor(key, secret) {
-    this.key = key
-    this.secret = secret
+  constructor() {
+    this.status = 'prepare'
+    this.order = '240001395917498'
   }
 
-  signRequest(request) {
-    const shaObj = new jsSHA("SHA-512", "TEXT")
-    shaObj.setHMACKey(this.secret, "TEXT")
-    shaObj.update(request)
-    return shaObj.getHMAC("HEX")
-  }
-
-  getInfo() {
+  sell(amount, price) {
     return new Promise((resolve, reject) => {
-      const request = 'nonce=1'
-      fetch('https://yobit.net/tapi/getInfo', {
+      fetch('/api/sell', {
         method: 'post',
-        mode: 'cors',
         headers: {
           'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'Access-Control-Allow-Origin': 'https://yobit.net',
-          'Key': this.key,
-          'Sign': this.signRequest(request)
         },
-        body: request
-      }).then(resolve).catch(reject)
+        body: `amount=${amount}&price=${price}`
+      }).then(result => {
+        result.json().then((jsonResult) => {
+          if (jsonResult.success === 1) {
+            this.order = jsonResult.return.order_id
+            resolve(jsonResult.return.remains)
+          } else {
+            reject()
+          }
+        })
+      }).catch(reject)
     })
   }
 
-  testAPI() {
+  buy(amount, price) {
     return new Promise((resolve, reject) => {
-      fetch('https://yobit.net/api/3/info', {
-        method: 'get',
-        mode: 'cors',
+      fetch('/api/buy', {
+        method: 'post',
         headers: {
           'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'Access-Control-Allow-Origin': 'https://yobit.net',
-          //'Key': this.key,
-          //'Sign': this.signRequest(request)
+        },
+        body: `amount=${amount}&price=${price}`
+      }).then(result => {
+        result.json().then((jsonResult) => {
+          if (jsonResult.success === 1) {
+            this.order = jsonResult.return.order_id
+            resolve(jsonResult.return.remains)
+          } else {
+            reject()
+          }
+        })
+      }).catch(reject)
+    })
+  }
+
+  start(amount, price, percent) {
+    const sellAmount = amount
+    const sellPrice = price
+    const buyAmount = sellAmount + (sellAmount * percent) / 100
+    const buyPrice = price / (1 + percent / 100)
+    this.buyAmount = buyAmount
+    this.buyPrice = buyPrice
+    this.status = 'sell'
+    this.sell(sellAmount, sellPrice).then(remains => {
+      if (remains === 0) {
+        this.status = 'buy'
+        this.trigger('sell-done')
+        this.buy(buyAmount, buyPrice).then(remains => {
+          if (remains === 0) {
+            this.status = 'done'
+            this.trigger('buy-done')
+          } else {
+            this.watch()
+          }
+        })
+      } else {
+        this.watch()
+      }
+    })
+  }
+
+  watch() {
+    setTimeout(() => {
+      this.status().then(status => {
+        if (status === 1 && this.status === 'sell') {
+          this.status = 'buy'
+          this.trigger('sell-done')
+          this.buy(this.buyAmount, this.buyPrice).then(remains => {
+            if (remains === 0) {
+              this.status = 'done'
+              this.trigger('buy-done')
+            } else {
+              this.watch()
+            }
+          })
         }
-      }).then(resolve).catch(reject)
+      })
+    })
+  }
+
+  status() {
+    return new Promise((resolve, reject) => {
+      fetch(`/api/status?order=${this.order}`, {
+        headers: {
+          'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        }
+      }).then(result => {
+        result.json().then((jsonResult) => {
+          if (jsonResult.success === 1) {
+            resolve(jsonResult.return[this.order].status)
+          }
+        })
+      }).catch(reject)
     })
   }
 }
 
-export default new TradingBot(authInfo.key, authInfo.secret)
+export default new TradingBot()
