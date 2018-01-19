@@ -41,7 +41,12 @@ class App extends Component {
     this.setState({screen: 3, profit: 'In dev'})
   }
 
-  handleStart({amount, price}) {
+  handleStart({amount, price, percent}) {
+    tradingBot.start(
+      parseFloat(amount),
+      parseFloat(price),
+      parseFloat(percent)
+    )
     this.setState({
       screen: 2,
       phase: 'sell',

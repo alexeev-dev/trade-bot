@@ -39,7 +39,9 @@ class TradingBot {
         },
         body: `amount=${amount}&price=${price}`
       }).then(result => {
+        console.log('sell before json', result)
         result.json().then((jsonResult) => {
+          console.log('sell: ', jsonResult)
           if (jsonResult.success === 1) {
             this.order = jsonResult.return.order_id
             resolve(jsonResult.return.remains)
@@ -47,7 +49,9 @@ class TradingBot {
             reject()
           }
         })
-      }).catch(reject)
+      }).catch(error => {
+        console.log(error)
+      })
     })
   }
 
@@ -61,6 +65,7 @@ class TradingBot {
         body: `amount=${amount}&price=${price}`
       }).then(result => {
         result.json().then((jsonResult) => {
+          console.log('buy: ', jsonResult)
           if (jsonResult.success === 1) {
             this.order = jsonResult.return.order_id
             resolve(jsonResult.return.remains)
@@ -68,7 +73,9 @@ class TradingBot {
             reject()
           }
         })
-      }).catch(reject)
+      }).catch(error => {
+        console.log(error)
+      })
     })
   }
 
@@ -82,6 +89,7 @@ class TradingBot {
     this.buyAmount = buyAmount
     this.buyPrice = buyPrice
     this.phase = 'sell'
+    console.log('start: ', sellAmount, sellPrice)
     this.sell(sellAmount, sellPrice).then(remains => {
       if (remains === 0) {
         this.trigger('sell-done')
@@ -92,8 +100,10 @@ class TradingBot {
   }
 
   watch() {
+    console.log('watching...')
     this.status().then(result => {
       const {amount} = result
+      console.log(result, amount)
       if (amount === 0) {
         this.trigger(doneEvent(this.phase))
       } else {
@@ -122,12 +132,16 @@ class TradingBot {
           'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
         }
       }).then(result => {
+        console.log('status before json: ', result)
         result.json().then((jsonResult) => {
+          console.log('status: ', jsonResult)
           if (jsonResult.success === 1) {
             resolve(jsonResult.return[this.order])
           }
         })
-      }).catch(reject)
+      }).catch(error => {
+        console.log(error)
+      })
     })
   }
 }
