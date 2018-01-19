@@ -7,7 +7,7 @@ const TradeEnd = ({profit, onRestart}) => (
       Операция<br/> завершена!
     </h2>
     <p className="tradeEnd__profit">
-      Ваша прибыль:<br/> <strong>${profit}</strong>
+      Ваша прибыль:<br/> <strong>{profit} ETH</strong>
     </p>
     <Button onClick={onRestart}>Торговать ещё!</Button>
   </div>

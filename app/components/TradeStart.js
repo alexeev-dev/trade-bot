@@ -47,7 +47,7 @@ class TradeStart extends Component {
           type="text"
           name="price"
           className="tradeStart__input"
-          placeholder="Сумма покупки"
+          placeholder="Цена покупки"
           onChange={this.handleChange}
         />
         <input

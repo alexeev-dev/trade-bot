@@ -20,20 +20,31 @@ class App extends Component {
     this.handleStart = this.handleStart.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleRestart = this.handleRestart.bind(this)
+    this.handleUpdate = this.handleUpdate.bind(this)
+    this.handleSellEnd = this.handleSellEnd.bind(this)
+    this.handleBuyEnd = this.handleBuyEnd.bind(this)
+    this.handleUpdate = this.handleUpdate.bind(this)
+    tradingBot.on('update', this.handleUpdate)
+    tradingBot.on('sell-done', this.handleSellEnd)
+    tradingBot.on('buy-done', this.handleBuyEnd)
   }
 
-  componentDidMount() {
-    tradingBot.status().then(result => {
-      console.log(result)
-    }).catch(error => {
-      console.log(error)
-    })
+  handleUpdate(phase, amount, done, price) {
+    this.setState({phase, done, amount, price})
+  }
+
+  handleSellEnd() {
+    this.setState({phase: 'buy'})
+  }
+
+  handleBuyEnd() {
+    this.setState({screen: 3, profit: 'In dev'})
   }
 
   handleStart({amount, price}) {
     this.setState({
       screen: 2,
-      phase: 'buy',
+      phase: 'sell',
       done: 0,
       amount,
       price,

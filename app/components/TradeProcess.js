@@ -18,7 +18,7 @@ const TradeProcess = ({phase, amount, price, done, onCancel}) => (
       {phaseText(phase)}<br/> ${amount} BTC
     </h2>
     <p className="tradeProcess__price">
-      по цене ${price} за 1 BTC
+      по цене {price} ETH за 1 BTC
     </p>
     <p className="tradeProcess__done">
       Уже куплено:<br/> {done} BTC
