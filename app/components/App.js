@@ -4,6 +4,8 @@ import TradeStart from './TradeStart'
 import TradeProcess from './TradeProcess'
 import TradeEnd from './TradeEnd'
 
+import tradingBot from '../services/trading'
+
 class App extends Component {
   constructor(props) {
     super(props)
@@ -18,6 +20,15 @@ class App extends Component {
     this.handleStart = this.handleStart.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleRestart = this.handleRestart.bind(this)
+  }
+
+  componentDidMount() {
+    console.log('!!!')
+    tradingBot.testAPI().then(result => {
+      console.log(result)
+    }).catch(error => {
+      console.log(error)
+    })
   }
 
   handleStart({amount, price}) {
