@@ -68,11 +68,11 @@ class App extends Component {
     const {screen, phase, amount, price, done, profit} = this.state
     return (
       <div className="app">
-      <div className="app__title">
-        <h2>Trade Bot</h2>
-        <i className="icon ion-ios-ionic-outline" aria-hidden="true"></i>
-        <p>The Future Is Here</p>
-      </div>
+        <div className="app__title">
+          <h2>Trade Bot</h2>
+          <i className="icon ion-ios-ionic-outline" aria-hidden="true"></i>
+          <p>The Future Is Here</p>
+        </div>
         <div className="app__window">
           {screen === 1 && <TradeStart onStart={this.handleStart}/>}
           {screen === 2 && <TradeProcess
