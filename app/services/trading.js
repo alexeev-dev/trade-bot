@@ -63,11 +63,11 @@ class TradingBot {
       })
   }
 
-  watch(order) {
+  watch(order, operation) {
     return new Promise((resolve, reject) => {
       const test = () => {
-        console.log(`Watching for order ${order}`)
         queryStatus(order).then((result) => {
+          console.log(`-> Осталось ${operation} по ордеру ${order}: ${result.amount}`)
           if (result.status === 1) {
             resolve()
           } else {
@@ -83,12 +83,12 @@ class TradingBot {
     })
   }
 
-  order(orderFunction, amount, price, errorText) {
+  order(orderFunction, amount, price, operation, errorText) {
     return new Promise((resolve, reject) => {
       orderFunction(amount, price).then((result) => {
         if (result.success === 1) {
           const order = result.return.order_id
-          this.watch(order).then(() => {
+          this.watch(order, operation).then(() => {
             resolve(order)
           })
         } else {
@@ -103,13 +103,13 @@ class TradingBot {
   sell(amount, price) {
     const ERROR = 'Не удалось выполнить запрос на продажу!'
     console.log(`Продажа ${amount} ETH по цене ${price} BTC за 1 ETH`)
-    return this.order(querySell, amount, price, ERROR)
+    return this.order(querySell, amount, price, 'продать', ERROR)
   }
 
   buy(amount, price) {
     const ERROR = 'Не удалось выполнить запрос на покупку!'
     console.log(`Покупка ${amount} ETH по цене ${price} BTC за 1 ETH`)
-    return this.order(queryBuy, amount, price, ERROR)
+    return this.order(queryBuy, amount, price, 'купить', ERROR)
   }
 
   trigger(event, data) {
