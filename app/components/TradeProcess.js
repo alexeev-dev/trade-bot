@@ -12,16 +12,27 @@ const phaseText = (phase) => {
   }
 }
 
+const processText = (phase) => {
+  switch(phase) {
+    case 'buy':
+      return 'Уже куплено'
+    case 'sell':
+      return 'Уже продано'
+    default:
+      return 'Дела стоят'
+  }
+}
+
 const TradeProcess = ({phase, amount, price, done, onCancel}) => (
   <div className="tradeProcess">
     <h2 className="tradeProcess__heading">
-      {phaseText(phase)}<br/> ${amount} BTC
+      {phaseText(phase)}<br/> ${amount} ETH
     </h2>
     <p className="tradeProcess__price">
-      по цене {price} ETH за 1 BTC
+      по цене {price} BTC за 1 ETH
     </p>
     <p className="tradeProcess__done">
-      Уже куплено:<br/> {done} BTC
+      {processText(phase)}:<br/> {done} ETH
     </p>
     <div className="tradeProcess__spinner"></div>
     <Button onClick={onCancel}>Отменить!</Button>

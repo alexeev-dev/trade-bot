@@ -1,12 +1,43 @@
 const doneEvent = phase => phase === 'sell' ? 'sell-done' : 'buy-done'
 
+const HEADERS = {
+  'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8'
+}
+
+function querySell(amount, price) {
+  return fetch('/api/sell', {
+    method: 'post',
+    headers: HEADERS,
+    body: `amount=${amount}&price=${price}`
+  }).then(result => result.json())
+}
+
+function queryBuy(amount, price) {
+  return fetch('/api/buy', {
+    method: 'post',
+    headers: HEADERS,
+    body: `amount=${amount}&price=${price}`
+  }).then(result => result.json())
+}
+
+function queryStatus(order) {
+  return new Promise((resolve, reject) => {
+    fetch(`/api/status?order=${order}`, {headers: HEADERS})
+      .then(result => result.json())
+      .then(result => {
+        if (result.success === 1) {
+          resolve(result.return[order])
+        } else {
+          reject('Ошибка запроса статуса!')
+        }
+      }).catch((error) => {
+        reject(error)
+      })
+  })
+}
+
 class TradingBot {
   constructor() {
-    this.phase = 'prepare'
-    this.order = '240001395917498'
-    this.handleSellDone = this.handleSellDone.bind(this)
-    this.handleBuyDone = this.handleBuyDone.bind(this)
-    this.watch = this.watch.bind(this)
     this.events = {
       'sell-done': [this.handleSellDone],
       'buy-done': [this.handleBuyDone],
@@ -14,135 +45,89 @@ class TradingBot {
     }
   }
 
-  handleSellDone() {
-    const {buyAmount, buyPrice} = this
-    this.phase = 'buy'
-    this.buy(buyAmount, buyPrice).then(remains => {
-      if (remains === 0) {
-        this.trigger('buy-done')
-      } else {
-        this.watch()
-      }
-    })
-  }
-
-  handleBuyDone() {
-    this.phase = 'done'
-  }
-
-  sell(amount, price) {
-    return new Promise((resolve, reject) => {
-      fetch('/api/sell', {
-        method: 'post',
-        headers: {
-          'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body: `amount=${amount}&price=${price}`
-      }).then(result => {
-        console.log('sell before json', result)
-        result.json().then((jsonResult) => {
-          console.log('sell: ', jsonResult)
-          if (jsonResult.success === 1) {
-            this.order = jsonResult.return.order_id
-            resolve(jsonResult.return.remains)
-          } else {
-            reject()
-          }
-        })
-      }).catch(error => {
-        console.log(error)
-      })
-    })
-  }
-
-  buy(amount, price) {
-    return new Promise((resolve, reject) => {
-      fetch('/api/buy', {
-        method: 'post',
-        headers: {
-          'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body: `amount=${amount}&price=${price}`
-      }).then(result => {
-        result.json().then((jsonResult) => {
-          console.log('buy: ', jsonResult)
-          if (jsonResult.success === 1) {
-            this.order = jsonResult.return.order_id
-            resolve(jsonResult.return.remains)
-          } else {
-            reject()
-          }
-        })
-      }).catch(error => {
-        console.log(error)
-      })
-    })
-  }
-
   start(amount, price, percent) {
     const sellAmount = amount
     const sellPrice = price
     const buyAmount = sellAmount + (sellAmount * percent) / 100
     const buyPrice = price / (1 + percent / 100)
-    this.sellAmount = sellAmount
-    this.sellPrice = sellPrice
-    this.buyAmount = buyAmount
-    this.buyPrice = buyPrice
-    this.phase = 'sell'
-    console.log('start: ', sellAmount, sellPrice)
-    this.sell(sellAmount, sellPrice).then(remains => {
-      if (remains === 0) {
+    this.tradeInfo = {sellAmount, sellPrice, buyAmount, buyPrice}
+    console.log('==== Начало торгов ====')
+    this.sell(sellAmount, sellPrice)
+      .then(result => {
         this.trigger('sell-done')
-      } else {
-        this.watch()
-      }
-    })
-  }
-
-  watch() {
-    console.log('watching...')
-    this.status().then(result => {
-      const {amount} = result
-      console.log(result, amount)
-      if (amount === 0) {
-        this.trigger(doneEvent(this.phase))
-      } else {
-        const total = this.phase === 'sell' ? this.sellAmount : this.buyAmount
-        const price = this.phase === 'sell' ? this.sellPrice : this.buyPrice
-        this.trigger('update', this.phase, total, total - amount, price)
-        setTimeout(this.watch, 120000)
-      }
-    })
-  }
-
-  trigger(event, phase, amount = 0, done = 0, price = 0) {
-    this.events[event].forEach(callback => {
-      callback(phase, amount, done, price)
-    })
-  }
-
-  on(event, callback) {
-    this.events[event].push(callback)
-  }
-
-  status() {
-    return new Promise((resolve, reject) => {
-      fetch(`/api/status?order=${this.order}`, {
-        headers: {
-          'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        }
+        return this.buy(buyAmount, buyPrice)
       }).then(result => {
-        console.log('status before json: ', result)
-        result.json().then((jsonResult) => {
-          console.log('status: ', jsonResult)
-          if (jsonResult.success === 1) {
-            resolve(jsonResult.return[this.order])
-          }
-        })
+        this.trigger('buy-done')
       }).catch(error => {
+        console.error(error)
+      })
+  }
+
+  watch(order) {
+    return new Promise((resolve, reject) => {
+      const test = () => {
+        console.log(`Watching for order ${order}`)
+        queryStatus(order).then((result) => {
+          if (result.status === 1) {
+            resolve()
+          } else {
+            this.trigger('update', result.amount)
+            setTimeout(test, 120000)
+          }
+        }).catch((error) => {
+          console.error(`Произошла ошибка во время ожидания ордера ${order}`)
+          console.error(error)
+        })
+      }
+      test()
+    })
+  }
+
+  order(orderFunction, amount, price, errorText) {
+    return new Promise((resolve, reject) => {
+      orderFunction(amount, price).then((result) => {
+        if (result.success === 1) {
+          const order = result.return.order_id
+          this.watch(order).then(() => {
+            resolve(order)
+          })
+        } else {
+          reject(errorText)
+        }
+      }).catch((error) => {
         console.log(error)
       })
     })
+  }
+
+  sell(amount, price) {
+    const ERROR = 'Не удалось выполнить запрос на продажу!'
+    console.log(`Продажа ${amount} ETH по цене ${price} BTC за 1 ETH`)
+    return this.order(querySell, amount, price, ERROR)
+  }
+
+  buy(amount, price) {
+    const ERROR = 'Не удалось выполнить запрос на покупку!'
+    console.log(`Покупка ${amount} ETH по цене ${price} BTC за 1 ETH`)
+    return this.order(queryBuy, amount, price, ERROR)
+  }
+
+  trigger(event, data) {
+    if (typeof this.events[event] !== 'undefined') {
+      this.events[event].forEach(callback => {
+        if (typeof callback === 'function') {
+          callback(data, this.tradeInfo)
+        }
+      })
+    }
+  }
+
+  on(event, callback) {
+    if (typeof this.events[event] !== 'undefined') {
+      this.events[event].push(callback)
+    } else {
+      this.events[event] = [callback]
+    }
   }
 }
 

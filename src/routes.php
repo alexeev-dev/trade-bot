@@ -72,7 +72,14 @@ $app->post('/api/sell', function (Request $request, Response $response, array $a
     'amount' => $amount,
     'nonce' => $nonce
   ]);
-  return $response->withHeader('Content-Type', 'application/json')->write($curl->response);
+  if ($curl->error) {
+    return $response->withJson([
+      'success' => 0,
+      'error' => $curl->error_code
+    ]);
+  } else {
+    return $response->withHeader('Content-Type', 'application/json')->write($curl->response);
+  }
 });
 
 $app->post('/api/buy', function (Request $request, Response $response, array $args) {
@@ -91,7 +98,14 @@ $app->post('/api/buy', function (Request $request, Response $response, array $ar
     'amount' => $amount,
     'nonce' => $nonce
   ]);
-  return $response->withHeader('Content-Type', 'application/json')->write($curl->response);
+  if ($curl->error) {
+    return $response->withJson([
+      'success' => 0,
+      'error' => $curl->error_code
+    ]);
+  } else {
+    return $response->withHeader('Content-Type', 'application/json')->write($curl->response);
+  }
 });
 
 $app->get('/', function (Request $request, Response $response, array $args) {

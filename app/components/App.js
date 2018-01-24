@@ -29,16 +29,29 @@ class App extends Component {
     tradingBot.on('buy-done', this.handleBuyEnd)
   }
 
-  handleUpdate(phase, amount, done, price) {
-    this.setState({phase, done, amount, price})
+  handleUpdate(data, info) {
+    const amount = this.state.phase === 'sell' ?
+      info.sellAmount : info.buyAmount
+    this.setState({
+      done: amount - data,
+    })
   }
 
-  handleSellEnd() {
-    this.setState({phase: 'buy'})
+  handleSellEnd(data, info) {
+    console.log('Продажа успешно выполнена!')
+    this.setState({
+      phase: 'buy',
+      price: info.buyPrice,
+      amount: info.buyAmount
+    })
   }
 
-  handleBuyEnd() {
-    this.setState({screen: 3, profit: 'In dev'})
+  handleBuyEnd(data, info) {
+    console.log('Покупка успешно выполнена!')
+    this.setState({
+      screen: 3,
+      profit: data.buyAmount - data.sellAmount + ' ETH'
+    })
   }
 
   handleStart({amount, price, percent}) {
